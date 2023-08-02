@@ -3,6 +3,9 @@
 
 import os
 import shutil
+import scipy
+
+from RFSMHandler import RFSMHandler
 
 ################################################ MODIFICAR AQUÍ ######################################################################################
 ######################################################################################################################################################
@@ -57,3 +60,39 @@ shutil.copy(os.path.join(path_mesh, 'tblIZNbrWidth.csv'), path_csv)
 shutil.copy(os.path.join(path_mesh, 'tblIZNeighbour.csv'), path_csv)
 shutil.copy(os.path.join(path_mesh, 'tblIZVolume.csv'), path_csv)
 shutil.copy(os.path.join(path_mesh, 'tblParameters.csv'), path_csv)
+
+# Eventos que vamos a simular
+evento_label = ['CFCC']  # ['Gloria', 'PMVE', 'TR5', 'TR10', 'TR25', 'TR50', 'TR100', 'TR500']
+cont = 1
+
+for evento in evento_label:
+    path_test = os.path.join(path_site_case, 'tests', 'I_' + flood_case + '_' + evento, '')
+    os.makedirs(os.path.join(path_site_case, 'tests'), exist_ok=True)
+    os.makedirs(path_test, exist_ok=True)
+
+    # BUILD CASE
+    path_project = path_test
+    RFSMH = RFSMHandler(path_project)
+    
+    # AccData files
+    path_AccDataFiles = os.path.join(path_site_case, 'csv')
+    print(path_AccDataFiles)
+    RFSMH.SetAccData(path_AccDataFiles)
+    
+    # SET BOUNDARY CONDITIONS
+    cont += 1
+    BCSetID = cont
+    bc1 = scipy.io.loadmat(os.path.join(path_inputs, 'Input_RFSM_' + flood_case + '_' + option + alpha + '.mat'))
+    PointList1 = bc1['input']
+    IzListFile1 = os.path.join(path_site_case, 'IZCoast_correg.txt')
+    BCTypeID1 = 2  # 1 overtopping; 2 level; 10 river or wadi discharge (raw inflow)
+    LevelOutCond1 = 0  # 1 si es overtopping; 0 si es level/nivel o discharge
+    RFSMH.AddBCSetFromIZList(BCSetID, IzListFile1, PointList1, BCTypeID1, LevelOutCond1)
+    
+    # Manning roughness
+    # To introduce a variable roughness
+    if Rough_act == 1:
+        shutil.copy(os.path.join(path_mesh, 'CManning.mat'), path_site_case)
+        mc = scipy.io.loadmat(os.path.join(path_site_case, 'CManning.mat'))
+        CManningList = mc['CManningList']
+        RFSMH.SetCManningList(BCSetID, CManningList)
