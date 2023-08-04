@@ -5,7 +5,7 @@ import os
 import shutil
 import scipy
 
-from RFSMHandler import RFSMHandler
+from RFSMHandler import *
 
 ################################################ MODIFICAR AQUÍ ######################################################################################
 ######################################################################################################################################################
@@ -66,17 +66,13 @@ evento_label = ['CFCC']  # ['Gloria', 'PMVE', 'TR5', 'TR10', 'TR25', 'TR50', 'TR
 cont = 1
 
 for evento in evento_label:
-    path_test = os.path.join(path_site_case, 'tests', 'I_' + flood_case + '_' + evento, '')
-    os.makedirs(os.path.join(path_site_case, 'tests'), exist_ok=True)
-    os.makedirs(path_test, exist_ok=True)
 
     # BUILD CASE
     path_project = path_test
     RFSMH = RFSMHandler(path_project)
     
     # AccData files
-    path_AccDataFiles = os.path.join(path_site_case, 'csv')
-    print(path_AccDataFiles)
+    path_AccDataFiles = path_csv
     RFSMH.SetAccData(path_AccDataFiles)
     
     # SET BOUNDARY CONDITIONS
