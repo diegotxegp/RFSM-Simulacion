@@ -8,25 +8,15 @@ def Read2Container(path):
         
         with open(path, newline='') as csvfile:
             reader = csv.reader(csvfile)
-            headerLine = next(reader)
-        
-        tableHeader = [header.strip() for header in headerLine]
-        format = ['%f' for _ in tableHeader]
-        
-        if tableHeader[0] == 'ParName':
-            format[0] = '%s'
-        
-        with open(path, newline='') as csvfile:
-            tableContent = list(csv.reader(csvfile, delimiter=','))
-            
-        # Transpose tableContent to convert rows into columns
-        tableContent = list(map(list, zip(*tableContent)))
+            tableHeader = next(reader)
+            tableHeader = list(map(str.strip, tableHeader))
 
-        print(tableHeader)
-        print(tableContent)
-        
-        # Convert the content to their respective formats
-        tableContent = [list(map(eval, row)) for row in tableContent]
+            tableContent = [[] for _ in range(len(tableHeader))]
+
+            for fila in reader:
+                for i in range(len(fila)):
+                    tableContent[i].append(fila[i])
+
         
         # Create Dictionary (container)
         container = dict(zip(tableHeader, tableContent))
