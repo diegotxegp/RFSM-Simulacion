@@ -173,14 +173,14 @@ class RFSMHandler:
         # Load IZListFile
         IzList = np.loadtxt(IZListFile)
 
-        # Check sets BCSetID-BCType-IZID is not already stored at csv_tusrBCFlowLevel
+        """# Check sets BCSetID-BCType-IZID is not already stored at csv_tusrBCFlowLevel
         BCFlowLevel = np.loadtxt(self.csv_tusrBCFlowLevel, delimiter=',')
         storedSets = np.unique(BCFlowLevel[:, :3], axis=0)
         newSets = np.column_stack((np.full(len(IzList), BCSetID), np.full(len(IzList), BCTypeID), IzList[:, 0]))
 
         if np.any(np.isin(newSets, storedSets, assume_unique=True, axis=0)):
             print('Error: BCSetID-BCType-IZID combination already exists in tusrBCFlowLevel.csv input file.')
-            return
+            return"""
 
         # Add new testBC
         for izIndex in range(len(IzList)):
@@ -191,8 +191,8 @@ class RFSMHandler:
             IZLength = IZncells * float(cellsize)
 
             # Find IZ centroids
-            MidX = self.m_tblImpactZone[self.m_tblImpactZone[:, 0] == IZID, 3]
-            MidY = self.m_tblImpactZone[self.m_tblImpactZone[:, 0] == IZID, 4]
+            MidX = [item[3] for item in self.m_tblImpactZone if item[0] == IZID]
+            MidY = [item[4] for item in self.m_tblImpactZone if item[0] == IZID]
 
             # Find closest point to IZ centroid
             if len(PointList) == 1:
@@ -206,11 +206,11 @@ class RFSMHandler:
             Time = ClosestPoint['timeV']
 
             # Create testBCValueMatrix
-            testBCValueMatrixIn = np.zeros((len(ClosestPoint['timeV']), 5))
+            testBCValueMatrixIn = np.zeros((len(Time[0][0].tolist()[0]), 5))
             testBCValueMatrixIn[:, 0] = BCSetID
             testBCValueMatrixIn[:, 1] = BCTypeID
             testBCValueMatrixIn[:, 2] = IZID
-            testBCValueMatrixIn[:, 3] = Time
+            testBCValueMatrixIn[:, 3] = Time[0][0].tolist()[0]
 
             # Check if key restrict values are being repeated
 
