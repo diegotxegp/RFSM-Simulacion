@@ -204,30 +204,34 @@ class RFSMHandler:
 
             # Time data (seconds)
             Time = ClosestPoint['timeV']
+            timeV = Time[0][0].tolist()[0]
 
             # Create testBCValueMatrix
-            testBCValueMatrixIn = np.zeros((len(Time[0][0].tolist()[0]), 5))
+            testBCValueMatrixIn = np.zeros((len(timeV), 5))
             testBCValueMatrixIn[:, 0] = BCSetID
             testBCValueMatrixIn[:, 1] = BCTypeID
             testBCValueMatrixIn[:, 2] = IZID
-            testBCValueMatrixIn[:, 3] = Time[0][0].tolist()[0]
+            testBCValueMatrixIn[:, 3] = timeV
 
             # Check if key restrict values are being repeated
 
+            inflow = ClosestPoint['inflowV']
+            inflowV = inflow[0][0].tolist()[0]
+
             # TODO: Add new BCTypeID ?
             if BCTypeID == 2:  # level
-                testBCValueMatrixIn[:, 4] = ClosestPoint['inflowV'] - IZLevel
+                testBCValueMatrixIn[:, 4] = inflowV - IZLevel
                 testBCValueMatrixIn[testBCValueMatrixIn[:, 4] < 0, 4] = 0  # remove negative values
 
             elif BCTypeID == 1 and not raw_q:  # discharge (coast)
-                testBCValueMatrixIn[:, 4] = ClosestPoint['inflowV'] * IZLength
+                testBCValueMatrixIn[:, 4] = inflowV * IZLength
 
             elif BCTypeID == 1 and raw_q:  # discharge (mountain. Use raw inflow value)
-                testBCValueMatrixIn[:, 4] = ClosestPoint['inflowV']
+                testBCValueMatrixIn[:, 4] = inflowV
 
             # level out condition
             if dolvlOut == 1:
-                auxlvlout = np.zeros((len(ClosestPoint['timeV']), 5))
+                auxlvlout = np.zeros((len(timeV), 5))
                 auxlvlout[:, 0] = BCSetID
                 auxlvlout[:, 1] = 3
                 auxlvlout[:, 2] = IZID
