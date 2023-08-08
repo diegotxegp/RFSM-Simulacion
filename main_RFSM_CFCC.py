@@ -4,8 +4,10 @@
 import os
 import shutil
 import scipy
+import time
 
 from RFSMHandler import *
+from InputXML import *
 
 ################################################ MODIFICAR AQUÍ ######################################################################################
 ######################################################################################################################################################
@@ -79,6 +81,7 @@ for evento in evento_label:
     cont += 1
     BCSetID = cont
     bc1 = scipy.io.loadmat(os.path.join(path_inputs, 'Input_RFSM_' + flood_case + '_' + option + alpha + '.mat'))
+    print(bc1['input'])
     PointList1 = bc1['input']
     IzListFile1 = os.path.join(path_site_case, 'IZCoast_correg.txt')
     BCTypeID1 = 2  # 1 overtopping; 2 level; 10 river or wadi discharge (raw inflow)
@@ -93,4 +96,30 @@ for evento in evento_label:
         CManningList = mc['CManningList']
         RFSMH.SetCManningList(BCSetID, CManningList)
 
-    
+    Input = InputXML()
+
+    # Execution parameters
+    Input.TestID = cont
+    Input.TestDesc = f'ID{cont}'
+    Input.BCSetID = cont
+    Input.StartTime = '0#h'
+    Input.EndTime = '12#h'
+    # Input.EndTime = list_to_str([len(PointList1[0].inflowV), 'h'])  # Uncomment this line if PointList1 is defined
+    Input.TimeStep = 1
+    Input.SaveTimeStep = '1#h'
+    Input.MaxTimeStep = 20
+    Input.MinTimeStep = 0.01
+    Input.AlphaParameter = 0.8
+    Input.ManningGlobalValue = 0.05
+    Input.Results = '1'
+    Input.LogVerbose = '0'
+
+    batch_mode = 1  # batch execution mode
+    RFSMH.LaunchRFSM(Input, batch_mode)
+
+    # RESULTS ascii
+    export_mat = os.path.join(path_test, f'{case_name}.mat')
+    RFSMH.Export2mat(export_mat, Input.TestID)
+
+    toc = time.time()
+    print("Elapsed Time:", toc)

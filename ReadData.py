@@ -1,6 +1,6 @@
 import csv
 
-def Read2Container(path):
+def ReadData(path):
         # Method for reading .csv files.
         # Returns dictionary with csv header-column
         
@@ -17,9 +17,5 @@ def Read2Container(path):
                 for i in range(len(fila)):
                     tableContent[i].append(fila[i])
 
-        
-        # Create Dictionary (container)
-        container = dict(zip(tableHeader, tableContent))
-        
         print('Done.')
-        return container
+        return tableHeader, tableContent

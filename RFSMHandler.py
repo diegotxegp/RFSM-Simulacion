@@ -6,8 +6,9 @@ import shutil
 import csv
 import numpy as np
 import scipy.io as sio
+import subprocess
 
-from Read2Container import *
+from ReadData import *
 
 class RFSMHandler:
     def __init__(self, path_project):
@@ -21,7 +22,8 @@ class RFSMHandler:
         elif os.name == 'posix':
             sf = 'unix'
 
-        self.path_bin_RFSM = os.path.join(os.path.dirname(self.path_src), '..', '..', 'bin', 'RFSM', sf, 'RFSM_Hydrodynamic.exe')
+        self.path_bin_RFSM = os.path.join(os.path.dirname(self.path_src), 'bin', 'RFSM', sf, 'RFSM_Hydrodynamic.exe')
+        self.path_bin_RFSM.replace("\\","\\\\")
 
         # Project paths
         self.path_project = path_project
@@ -74,9 +76,12 @@ class RFSMHandler:
     def LoadAccDataTables(self):
         # Load data from AccData csv tables
 
-        dictParameters = Read2Container(os.path.join(self.path_input_accdata, 'tblParameters.csv'))
-        dictImpactCell = Read2Container(os.path.join(self.path_input_accdata, 'tblCell.csv'))
-        dictImpactZone = Read2Container(os.path.join(self.path_input_accdata, 'tblImpactZone.csv'))
+        tableHeader, tableContent = ReadData(os.path.join(self.path_input_accdata, 'tblParameters.csv'))
+        dictParameters = dict(zip(tableHeader, tableContent))
+        tableHeader, tableContent = ReadData(os.path.join(self.path_input_accdata, 'tblCell.csv'))
+        dictImpactCell = dict(zip(tableHeader, tableContent))
+        tableHeader, tableContent = ReadData(os.path.join(self.path_input_accdata, 'tblImpactZone.csv'))
+        dictImpactZone = dict(zip(tableHeader, tableContent))
 
         # CSV files to matlab matrix
         self.m_tblCell = list(zip(
@@ -173,6 +178,7 @@ class RFSMHandler:
         # Load IZListFile
         IzList = np.loadtxt(IZListFile)
 
+###############################################
         """# Check sets BCSetID-BCType-IZID is not already stored at csv_tusrBCFlowLevel
         BCFlowLevel = np.loadtxt(self.csv_tusrBCFlowLevel, delimiter=',')
         storedSets = np.unique(BCFlowLevel[:, :3], axis=0)
@@ -378,19 +384,24 @@ class RFSMHandler:
         path_xml = os.path.join(self.path_input_xml, f'input_{inputxml.TestID}.xml')
 
         inputxml.DbName = self.path_project
-        inputxml.Write(path_xml)
+        inputxml.write(path_xml)
 
         # Execute current TestID
         exec_path = self.path_bin_RFSM
+
+        b = ""
+
         if batchMode:
-            exec_path += ' -b'
+            b = "-b"
 
-        cmd = f'{exec_path} {path_xml}'
-        os.system(cmd)
+        cmd = [r'{}'.format(exec_path), b, path_xml]
+        subprocess.call(cmd)
 
-        # Move log file
+        """# Move log file
         execfolder = os.path.dirname(self.path_bin_RFSM)
+        print(execfolder)
         logfiles = [f for f in os.listdir(execfolder) if f.endswith('.log')]
+        print(logfiles)
         newest_logfile = max(logfiles, key=lambda f: os.path.getctime(os.path.join(execfolder, f)))
 
         org = os.path.join(execfolder, newest_logfile)
@@ -399,7 +410,7 @@ class RFSMHandler:
 
         # Clean old log files
         for f in logfiles:
-            os.remove(os.path.join(execfolder, f))
+            os.remove(os.path.join(execfolder, f))"""
 
 
     def Export2mat(self, path_export_mat, TestID):
@@ -414,22 +425,24 @@ class RFSMHandler:
             self.LoadAccDataTables()
 
         # Cell Parameters
-        cell_izs = self.m_tblCell[:, 1]
-        cell_z_ground = self.m_tblCell[:, 2]
-        cell_x = self.m_tblCell[:, 3]
-        cell_y = self.m_tblCell[:, 4]
+        cell_izs = np.array([float(item[1]) for item in self.m_tblCell])
+        cell_z_ground = np.array([float(item[2]) for item in self.m_tblCell])
+        cell_x = np.array([float(item[3]) for item in self.m_tblCell])
+        cell_y = np.array([float(item[4]) for item in self.m_tblCell])
 
         # Write cells topography to .mat file
         print(f'Writing: {path_export_mat} - topography XYZ data...', end='')
-        matf = sio.loadmat(path_export_mat, mat_dtype=True)
-        matf['x'] = cell_x
-        matf['y'] = cell_y
-        matf['z'] = cell_z_ground
+        data = {
+            "x": cell_x.reshape(-1, 1),
+            "y": cell_y.reshape(-1, 1),
+            "z": cell_z_ground.reshape(-1, 1)
+        }
+        matf = sio.savemat(path_export_mat, data)
         print(' Done.')
 
         # Read output ResultsIZMax
         rf = os.path.join(self.path_project, f'Results_{TestID}', 'tusrResultsIZMax.csv')
-        _, ResultsIZMax = csv.ReadData(rf)
+        _, ResultsIZMax = ReadData(rf)
 
         # Solve Cells for ResultsIZMax
         cell_z_water_level_max = np.zeros(len(cell_izs))
