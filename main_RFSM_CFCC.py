@@ -76,7 +76,8 @@ for evento in evento_label:
     # AccData files
     path_AccDataFiles = path_csv
     RFSMH.SetAccData(path_AccDataFiles)
-    
+
+    """ 
     # SET BOUNDARY CONDITIONS
     cont += 1
     BCSetID = cont
@@ -94,7 +95,7 @@ for evento in evento_label:
         mc = scipy.io.loadmat(os.path.join(path_site_case, 'CManning.mat'))
         CManningList = mc['CManningList']
         RFSMH.SetCManningList(BCSetID, CManningList)
-
+    """
     Input = InputXML()
 
     # Execution parameters

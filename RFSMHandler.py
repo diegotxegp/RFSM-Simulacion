@@ -251,7 +251,9 @@ class RFSMHandler:
             print(f'{izIndex+1}/{len(IzList)} done.', end='\r')
             with open(self.csv_tusrBCFlowLevel, 'a', newline='') as fW:
                 writer = csv.writer(fW)
-                writer.writerows(testBCValueMatrixIn)
+                for line in testBCValueMatrixIn:
+                    line_str = ", ".join(map(str, line))
+                    writer.writerows(line_str + "\n")
     
 
     def SetLevelOut(self, BCSetID, IZListFile, timeV):
