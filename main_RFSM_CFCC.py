@@ -81,7 +81,6 @@ for evento in evento_label:
     cont += 1
     BCSetID = cont
     bc1 = scipy.io.loadmat(os.path.join(path_inputs, 'Input_RFSM_' + flood_case + '_' + option + alpha + '.mat'))
-    print(bc1['input'])
     PointList1 = bc1['input']
     IzListFile1 = os.path.join(path_site_case, 'IZCoast_correg.txt')
     BCTypeID1 = 2  # 1 overtopping; 2 level; 10 river or wadi discharge (raw inflow)

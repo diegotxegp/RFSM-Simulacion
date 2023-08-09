@@ -165,12 +165,14 @@ class RFSMHandler:
             BCTypeID = 1
             raw_q = True
 
-        if not isinstance(PointList, list):
-            PointList = [PointList]
+        PointList = PointList[0]
 
         # Check Accdata is loaded
         if not self.bool_AccDataLoaded:
             self.LoadAccDataTables()
+
+        if os.path.exists(self.csv_tusrBCFlowLevel):
+            os.remove(self.csv_tusrBCFlowLevel)
 
         # Make user input csv tables if doesn't exist
         self.MakeInputUser()
@@ -178,7 +180,6 @@ class RFSMHandler:
         # Load IZListFile
         IzList = np.loadtxt(IZListFile)
 
-###############################################
         """# Check sets BCSetID-BCType-IZID is not already stored at csv_tusrBCFlowLevel
         BCFlowLevel = np.loadtxt(self.csv_tusrBCFlowLevel, delimiter=',')
         storedSets = np.unique(BCFlowLevel[:, :3], axis=0)
@@ -197,20 +198,21 @@ class RFSMHandler:
             IZLength = IZncells * float(cellsize)
 
             # Find IZ centroids
-            MidX = [item[3] for item in self.m_tblImpactZone if item[0] == IZID]
-            MidY = [item[4] for item in self.m_tblImpactZone if item[0] == IZID]
+            MidX = [float(item[3]) for item in self.m_tblImpactZone if int(item[0]) == IZID]
+            MidY = [float(item[4]) for item in self.m_tblImpactZone if int(item[0]) == IZID]
 
             # Find closest point to IZ centroid
             if len(PointList) == 1:
                 ClosestPoint = PointList[0]
             else:
-                DistVector = np.sqrt((np.array(PointList)[:, 0] - MidX)**2 + (np.array(PointList)[:, 1] - MidY)**2)
+                DistVector = [np.sqrt((point["x"][0][0] - MidX)**2 + (point["y"][0][0] - MidY)**2) for point in PointList]
+
                 posClosestPoint = np.argmin(DistVector)
                 ClosestPoint = PointList[posClosestPoint]
 
             # Time data (seconds)
             Time = ClosestPoint['timeV']
-            timeV = Time[0][0].tolist()[0]
+            timeV = Time.tolist()[0]
 
             # Create testBCValueMatrix
             testBCValueMatrixIn = np.zeros((len(timeV), 5))
@@ -222,7 +224,7 @@ class RFSMHandler:
             # Check if key restrict values are being repeated
 
             inflow = ClosestPoint['inflowV']
-            inflowV = inflow[0][0].tolist()[0]
+            inflowV = inflow.tolist()[0]
 
             # TODO: Add new BCTypeID ?
             if BCTypeID == 2:  # level
