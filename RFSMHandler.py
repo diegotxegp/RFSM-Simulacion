@@ -249,11 +249,11 @@ class RFSMHandler:
                 testBCValueMatrixIn = np.concatenate((testBCValueMatrixIn, auxlvlout))
 
             print(f'{izIndex+1}/{len(IzList)} done.', end='\r')
-            with open(self.csv_tusrBCFlowLevel, 'a', newline='') as fW:
-                writer = csv.writer(fW)
-                for line in testBCValueMatrixIn:
-                    line_str = ", ".join(map(str, line))
-                    writer.writerows(line_str + "\n")
+            with open(self.csv_tusrBCFlowLevel, 'a', newline='') as f:
+                for row in testBCValueMatrixIn:
+                    formatted_row = [int(row[0]), int(row[1]), int(row[2]), float(row[3]), float(row[4])]
+                    row_str = ', '.join(map(str, formatted_row))
+                    f.write(row_str + '\n')
     
 
     def SetLevelOut(self, BCSetID, IZListFile, timeV):
@@ -436,12 +436,12 @@ class RFSMHandler:
 
         # Write cells topography to .mat file
         print(f'Writing: {path_export_mat} - topography XYZ data...', end='')
-        data = {
+        matf = {
             "x": cell_x.reshape(-1, 1),
             "y": cell_y.reshape(-1, 1),
             "z": cell_z_ground.reshape(-1, 1)
         }
-        matf = sio.savemat(path_export_mat, data)
+        sio.savemat(path_export_mat, matf)
         print(' Done.')
 
         # Read output ResultsIZMax
@@ -451,16 +451,20 @@ class RFSMHandler:
         # Solve Cells for ResultsIZMax
         cell_z_water_level_max = np.zeros(len(cell_izs))
         print(f'Writing: {path_export_mat} - level_max (tusrResultsIZMax) data...')
+        print("Wait some minutes... (~ 5 minutes)")
+        
         for j in range(len(cell_izs)):
+
             cell_iz = cell_izs[j]
 
-            z_ground_water = ResultsIZMax[ResultsIZMax[:, 1] == cell_iz, 2]
+            z_ground_water = [float(ResultsIZMax[2][i]) for i in range(len(ResultsIZMax[0])) if int(ResultsIZMax[1][i]) == cell_iz]
+
             if len(z_ground_water) > 0:
-                cell_z_water_level_max[j] = max(z_ground_water - cell_z_ground[j], 0)
+                cell_z_water_level_max[j] = max(z_ground_water[0] - cell_z_ground[j], 0)
             else:
                 cell_z_water_level_max[j] = np.nan
 
-        cell_z_water_level_max[cell_z_water_level_max <= 0.001] = np.nan
+        cell_z_water_level_max = [np.nan for cell in cell_z_water_level_max if cell <= 0.001]
 
         # Write cells max level results to .mat file
         matf['level_max'] = cell_z_water_level_max
@@ -468,11 +472,11 @@ class RFSMHandler:
 
         # Read output ResultsIZTmp
         rf = os.path.join(self.path_project, f'Results_{TestID}', 'tusrResultsIZTmp.csv')
-        _, ResultsIZTmp = csv.ReadData(rf)
+        _, ResultsIZTmp = ReadData(rf)
 
         # Solve Cells for ResultsIZTmp
         cell_z_water_level_tmp = np.zeros(len(cell_izs))
-        time_v = np.sort(np.unique(ResultsIZTmp[:, 1]))
+        time_v = np.sort(np.unique(ResultsIZTmp[1]))
 
         matf['level_time'] = time_v
 
