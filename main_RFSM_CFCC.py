@@ -5,13 +5,12 @@ import os
 import shutil
 import scipy
 import time
-import rasterio
-from rasterio.transform import Affine
-from pyproj import CRS
 
 from RFSMHandler import *
 from InputXML import *
 from XYZ2Raster import *
+from Meshgrid2Ascii import *
+from asc2tif import *
 
 ################################################ MODIFICAR AQUÍ ######################################################################################
 ######################################################################################################################################################
@@ -22,7 +21,7 @@ option = "A"
 mdt = "cfcc08_dem_a.asc"
 flood_case = "storm_dyn"  # 'storm_sta' or 'storm_dyn'
 alpha = ""  # empty: no alpha / '_alpha1' or '_alpha2' or '_alpha3' or whatever alpha case you want to simulate
-EPSG = 0000
+EPSG = 3035
 
 #######################################################################################################################################################
 
@@ -129,7 +128,6 @@ for evento in evento_label:
     export_mat = os.path.join(path_test, f'{case_name}.mat')
     RFSMH.Export2mat(export_mat, Input.TestID)
 
-####################################################
     # Cargar archivo .mat
     mf = scipy.io.loadmat(export_mat)
 
@@ -141,29 +139,10 @@ for evento in evento_label:
     y = mf['y']
     level_max = mf['level_max']
 
-    # Crear un archivo TIFF y escribir los datos
-    tif_filename = os.path.join(path_test, f"{case_name}.tif")
-    height, width = level_max.shape
-    x_resolution = 25
-    y_resolution = 25
-    transform = Affine(x_resolution, 0.0, x.min(),
-                   0.0, -y_resolution, y.max())
+    XX, YY, ZZ = XYZ2Raster(x, y, level_max)
+    Meshgrid2Ascii(f_export, XX, YY, ZZ, -9)
 
-    crs = CRS.from_epsg(3035)
-    with rasterio.open(
-        tif_filename,
-        'w',
-        driver='GTiff',
-        height=height,
-        width=width,
-        count=1,  # Número de bandas
-        dtype=level_max.dtype,
-        crs=crs,
-        transform=transform,
-    ) as dst:
-        dst.write(level_max, 1)  # Escribe los datos en la banda 1
-
-    print(f"Archivo TIFF guardado en: {tif_filename}")
+    asc2tif(f_export,EPSG)
 
     toc = time.time()
     print("Elapsed Time:", toc-tic)

@@ -415,6 +415,19 @@ class RFSMHandler:
         # Clean old log files
         for f in logfiles:
             os.remove(os.path.join(execfolder, f))"""
+        
+
+    def parfor(cell_izs, ResultsIZMax, cell_z_water_level_max, cell_z_ground):
+        for j in range(len(cell_izs)):
+
+            cell_iz = cell_izs[j]
+
+            z_ground_water = [float(ResultsIZMax[2][i]) for i in range(len(ResultsIZMax[0])) if int(ResultsIZMax[1][i]) == cell_iz]
+
+            if len(z_ground_water) > 0:
+                cell_z_water_level_max[j] = max(z_ground_water[0] - cell_z_ground[j], 0)
+            else:
+                cell_z_water_level_max[j] = np.nan
 
 
     def Export2mat(self, path_export_mat, TestID):
