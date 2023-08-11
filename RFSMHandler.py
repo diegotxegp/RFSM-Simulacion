@@ -464,10 +464,10 @@ class RFSMHandler:
             else:
                 cell_z_water_level_max[j] = np.nan
 
-        cell_z_water_level_max = [np.nan for cell in cell_z_water_level_max if cell <= 0.001]
+        cell_z_water_level_max[cell_z_water_level_max <= 0.001] = np.nan
 
         # Write cells max level results to .mat file
-        matf['level_max'] = cell_z_water_level_max
+        matf['level_max'] = cell_z_water_level_max.reshape(-1, 1)
         print(' Done.')
 
         # Read output ResultsIZTmp

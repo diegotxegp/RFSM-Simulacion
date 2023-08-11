@@ -5,9 +5,13 @@ import os
 import shutil
 import scipy
 import time
+import rasterio
+from rasterio.transform import Affine
+from pyproj import CRS
 
 from RFSMHandler import *
 from InputXML import *
+from XYZ2Raster import *
 
 ################################################ MODIFICAR AQUÍ ######################################################################################
 ######################################################################################################################################################
@@ -18,6 +22,7 @@ option = "A"
 mdt = "cfcc08_dem_a.asc"
 flood_case = "storm_dyn"  # 'storm_sta' or 'storm_dyn'
 alpha = ""  # empty: no alpha / '_alpha1' or '_alpha2' or '_alpha3' or whatever alpha case you want to simulate
+EPSG = 0000
 
 #######################################################################################################################################################
 
@@ -66,6 +71,8 @@ shutil.copy(os.path.join(path_mesh, 'tblParameters.csv'), path_csv)
 # Eventos que vamos a simular
 evento_label = ['CFCC']  # ['Gloria', 'PMVE', 'TR5', 'TR10', 'TR25', 'TR50', 'TR100', 'TR500']
 cont = 1
+
+tic = time.time()
 
 for evento in evento_label:
 
@@ -118,15 +125,13 @@ for evento in evento_label:
     batch_mode = 1  # batch execution mode
     RFSMH.LaunchRFSM(Input, batch_mode)
 
-    tic = time.time()
-
     # RESULTS ascii
     export_mat = os.path.join(path_test, f'{case_name}.mat')
     RFSMH.Export2mat(export_mat, Input.TestID)
 
 ####################################################
     # Cargar archivo .mat
-    mf = np.loadmat(export_mat)
+    mf = scipy.io.loadmat(export_mat)
 
     # Crear ruta completa para el archivo de exportación
     f_export = os.path.join(path_test, f'{case_name}.asc')
@@ -136,15 +141,29 @@ for evento in evento_label:
     y = mf['y']
     level_max = mf['level_max']
 
-    # Convertir coordenadas XYZ a matriz raster
-    XX, YY = np.meshgrid(x, y)
-    ZZ = level_max * np.ones_like(XX)
+    # Crear un archivo TIFF y escribir los datos
+    tif_filename = os.path.join(path_test, f"{case_name}.tif")
+    height, width = level_max.shape
+    x_resolution = 25
+    y_resolution = 25
+    transform = Affine(x_resolution, 0.0, x.min(),
+                   0.0, -y_resolution, y.max())
 
-    # Guardar la matriz raster en un archivo ascii
-    with open(f_export, 'w') as f:
-        for i in range(XX.shape[0]):
-            for j in range(XX.shape[1]):
-                f.write(f"{XX[i, j]} {YY[i, j]} {ZZ[i, j]} -9\n")
+    crs = CRS.from_epsg(3035)
+    with rasterio.open(
+        tif_filename,
+        'w',
+        driver='GTiff',
+        height=height,
+        width=width,
+        count=1,  # Número de bandas
+        dtype=level_max.dtype,
+        crs=crs,
+        transform=transform,
+    ) as dst:
+        dst.write(level_max, 1)  # Escribe los datos en la banda 1
+
+    print(f"Archivo TIFF guardado en: {tif_filename}")
 
     toc = time.time()
     print("Elapsed Time:", toc-tic)
