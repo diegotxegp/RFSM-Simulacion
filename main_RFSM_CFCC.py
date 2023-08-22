@@ -12,6 +12,9 @@ from XYZ2Raster import *
 from Meshgrid2Ascii import *
 from asc2tif import *
 
+from IZCoast import izcoast
+from RFSMManning import manning
+
 ################################################ MODIFICAR AQUÍ ######################################################################################
 ######################################################################################################################################################
 # Dir general
@@ -23,6 +26,17 @@ flood_case = "storm_dyn"  # 'storm_sta' or 'storm_dyn'
 alpha = ""  # empty: no alpha / '_alpha1' or '_alpha2' or '_alpha3' or whatever alpha case you want to simulate
 EPSG = 3035
 
+coast = "CFCC08_coast_A.shp" # Si indicas "coast", "buffer" quedará vacío y se generará desde "coast"
+buffer = ""
+izmin = 20000
+izmax = 40000
+smalleriz = 10000
+
+lucascorine_tif = "LucasCorine_30m_2019.tif"
+
+polygonize_directorio = r'C:\Users\gprietod\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts\gdal_polygonize.py'
+translate_directorio = r"C:\Users\gprietod\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\osgeo\gdal_translate.exe"
+
 #######################################################################################################################################################
 
 path_case = os.path.join(path_main, control_case)
@@ -30,6 +44,11 @@ mesh = os.path.splitext(mdt)[0]
 path_mesh = os.path.join(path_case,mesh)
 case_name = control_case + '_' + option + '_' + flood_case + alpha
 
+# Genera IZCoasts
+izcoast.listIZCoast()
+
+# Genera Manning
+manning.generation_manning_file()
 
 # Add RFSM-EDA
 path_site = os.path.join(path_case, 'RFSM-results', mesh)

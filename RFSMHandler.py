@@ -10,6 +10,8 @@ import subprocess
 
 from ReadData import *
 
+from multiprocessing import Pool
+
 class RFSMHandler:
     def __init__(self, path_project):
         # Initializes with project path
@@ -464,10 +466,9 @@ class RFSMHandler:
         # Solve Cells for ResultsIZMax
         cell_z_water_level_max = np.zeros(len(cell_izs))
         print(f'Writing: {path_export_mat} - level_max (tusrResultsIZMax) data...')
-        print("Wait some minutes... (~ 5 minutes)")
+        print("Wait a moment...")
         
         for j in range(len(cell_izs)):
-
             cell_iz = cell_izs[j]
 
             z_ground_water = [float(ResultsIZMax[2][i]) for i in range(len(ResultsIZMax[0])) if int(ResultsIZMax[1][i]) == cell_iz]
