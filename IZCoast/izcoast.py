@@ -7,35 +7,51 @@ import pandas as pd
 import subprocess
 import os
 import time
-import os.path as path
-
-from main_RFSM_CFCC import mdt, coast, buffer, izmin, izmax, smalleriz, path_case, polygonize_directorio
-
-############################################# MODIFICAR AQUÍ #################################################################################
-#####################################################################################################################################################################################
-directorio_cfcc = path_case
-polygonize_directorio = polygonize_directorio
-
-mdt = mdt
-coast = coast # Si indicas "coast", "buffer" quedará vacío y se generará desde "coast"
-buffer = buffer
-izmin = izmin
-izmax = izmax
-smalleriz = smalleriz
-#####################################################################################################################################################################################
 
 
-directorio_dem = f"{directorio_cfcc}\{os.path.splitext(mdt)[0]}" # Sacar nombre que daremos a la nueva carpeta donde se guardarán los ficheros a partir del nombre del mdt
+directorio_cfcc = None
+polygonize_directorio = None
 
-cfcc = mdt[0:7].upper() # Nombre del directorio principal CFCC## donde están los ficheros base
-res = mdt[-6:-4].upper() # Letra de la resolucion (A/B)
+mdt = None
+coast = None # Si indicas "coast", "buffer" quedará vacío y se generará desde "coast"
+buffer = None
+izmin = None
+izmax = None
+smalleriz = None
+
+directorio_dem = None
+cfcc = None
+res = None
+
+"""
+Constructor de varibles globales
+"""
+def init(mdt1, coast1, buffer1, izmin1, izmax1, smalleriz1, path_case1, polygonize_directorio1):
+
+    global directorio_cfcc, polygonize_directorio, mdt, coast, buffer, izmin, izmax, smalleriz, directorio_dem, cfcc, res
+
+    directorio_cfcc = path_case1
+    polygonize_directorio = polygonize_directorio1
+
+    mdt = mdt1
+    coast = coast1 # Si indicas "coast", "buffer" quedará vacío y se generará desde "coast"
+    buffer = buffer1
+    izmin = izmin1
+    izmax = izmax1
+    smalleriz = smalleriz1
+
+    directorio_dem = os.path.join(directorio_cfcc, os.path.splitext(mdt)[0]) # Sacar nombre que daremos a la nueva carpeta donde se guardarán los ficheros a partir del nombre del mdt
+
+    cfcc = mdt[0:7].upper() # Nombre del directorio principal CFCC## donde están los ficheros base
+    res = mdt[-6:-4].upper() # Letra de la resolucion (A/B)
+
 
 """
 Genera la malla de celdas irregulares izid2.
 """
 def generateMesh_CFCC():
     FNULL = open(os.devnull, 'w') # use this if you want to suppress output to stdout from the subprocess
-    accdata = r".\accdata.exe"
+    accdata = r".\IZCoast\accdata.exe"
     dem = fr"{directorio_cfcc}\{mdt}"
     #command = [accdata, "irregular", "-izmin", str(izmin), "-izmax", str(izmax), "-smalleriz", str(smalleriz), "-noizid1", dem]
     args = f"{accdata} irregular -izmin {izmin} -izmax {izmax} -smalleriz {smalleriz} -noizid1 \"{dem}\""
@@ -73,7 +89,7 @@ def extract_icBoundary_CFCC():
     #------------------------------------------------------------------------------#
 
     # Create coast file and copy header
-    fCoast = open(path.join(path.dirname(pathfInput),'icBoundary.asc'),'w')
+    fCoast = open(os.path.join(os.path.dirname(pathfInput),'icBoundary.asc'),'w')
     with open(pathfInput) as fInput:
         for i in range(6):
             fCoast.write(fInput.readline())
@@ -144,7 +160,7 @@ def extract_icBoundary_CFCC():
         print("{0:.2f}%".format(100.0))
         print("Writing Coast IZ list...".format(100.0))
 
-        fizList = open(path.join(path.dirname(pathfInput),'listIZCoast.txt'),'w')
+        fizList = open(os.path.join(os.path.dirname(pathfInput),'listIZCoast.txt'),'w')
         fizList.write("{0}\t{1}\t{2}\n".format('IZID', 'nCells', 'minH'))
         for key in sorted(dictIZ.keys()):
             fizList.write("{0}\t{1}\t{2}\n".format(key, dictIZ[key], dictMinH[key]))
@@ -252,7 +268,9 @@ def coast_to_buffer(coast):
     coast_buffer.to_file(f"{directorio_cfcc}\{buffer}")
 
 
-def listIZCoast():
+def listIZCoast(mdt, coast, buffer, izmin, izmax, smalleriz, path_case, polygonize_directorio):
+
+    init(mdt, coast, buffer, izmin, izmax, smalleriz, path_case, polygonize_directorio)
     
     print(cfcc+res)
 
@@ -280,7 +298,3 @@ def listIZCoast():
     listIZCoast_function()
 
     print("####################################### COMPLETED! #############################################")
-
-
-if __name__ == "__main__":
-    listIZCoast()

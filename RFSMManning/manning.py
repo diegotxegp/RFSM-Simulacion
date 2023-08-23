@@ -16,29 +16,49 @@ from rasterio.mask import mask
 
 import subprocess
 
-from main_RFSM_CFCC import EPSG, path_main, control_case, option, mdt, lucascorine_tif, polygonize_directorio
 from pyproj import CRS
 
-################################################ MODIFICAR AQUÍ ######################################################################################
-######################################################################################################################################################
-manning_directorio = path_main
-cfcc = control_case
-opcion = option
-mdt = mdt
-lucascorine_tif = lucascorine_tif
 
-polygonize_directorio = polygonize_directorio
-#######################################################################################################################################################
+manning_directorio = None
+cfcc = None
+opcion = None
+mdt = None
+lucascorine_tif = None
+EPSG = None
+
+polygonize_directorio = None
+
+cfcc_directorio = None
+path_mesh = None
+lucascorine = None
+dem = None
 
 
-cfcc_directorio = os.path.join(manning_directorio, cfcc)
+"""
+Constructor de varibles globales
+"""
+def init(path_main1, control_case1, option1, mdt1, lucascorine_tif1, polygonize_directorio1, EPSG1):
 
-mesh = f"{cfcc.lower()}_dem_{opcion.lower()}"
-path_mesh = os.path.join(cfcc_directorio, mesh)
+    global manning_directorio, cfcc, opcion, mdt, EPSG, polygonize_directorio, cfcc_directorio, path_mesh, lucascorine, dem
 
-lucascorine = os.path.splitext(os.path.basename(lucascorine_tif))[0]
+    manning_directorio = path_main1
+    cfcc = control_case1
+    opcion = option1
+    mdt = mdt1
+    lucascorine_tif = lucascorine_tif1
+    EPSG = EPSG1
 
-dem = os.path.join(manning_directorio, mdt)
+    polygonize_directorio = polygonize_directorio1
+
+
+    cfcc_directorio = os.path.join(manning_directorio, cfcc)
+
+    mesh = f"{cfcc.lower()}_dem_{opcion.lower()}"
+    path_mesh = os.path.join(cfcc_directorio, mesh)
+
+    lucascorine = os.path.splitext(os.path.basename(lucascorine_tif))[0]
+
+    dem = os.path.join(manning_directorio, cfcc, mdt)
 
 
 """
@@ -229,14 +249,12 @@ def manning_roughness_coefficient():
 
 
 
-def generation_manning_file():
+def generation_manning_file(path_main, control_case, option, mdt, lucascorine_tif, polygonize_directorio, EPSG):
+
+    init(path_main, control_case, option, mdt, lucascorine_tif, polygonize_directorio, EPSG)
     res = resolution(dem)
-    cfcc_shp = asc_to_shp(mdt)
+    cfcc_shp = asc_to_shp(dem)
     extract_by_mask(lucascorine_tif, os.path.join(cfcc_directorio, cfcc_shp))
     resample(os.path.join(cfcc_directorio,f"{lucascorine}_masked.tif"), res)
     zonal_statistics_as_table(os.path.join(path_mesh,f"{cfcc}_izid2_{opcion}.shp"), os.path.join(cfcc_directorio,f"{lucascorine}_masked_{res}.tif"))
     manning_roughness_coefficient()
-
-
-if __name__ == "__main__":
-    generation_manning_file()
