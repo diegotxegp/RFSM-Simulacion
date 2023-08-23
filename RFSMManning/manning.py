@@ -100,7 +100,7 @@ def extract_by_mask(tif_in, shp_in):
     shp = gpd.read_file(shp_in)
 
     # Obtén la geometría de la máscara del shapefile
-    mask_geometry = shp.geometry[0]
+    mask_geometry = shp.geometry.unary_union
 
     # Recorta el archivo raster utilizando la geometría del shapefile como máscara
     cropped_image, cropped_transform = mask(tif, [mask_geometry], crop=True)
@@ -158,7 +158,7 @@ def zonal_statistics_as_table(shp_in, tif_in):
     # Itera por cada estadística
     for i, stat in enumerate(stats):
         
-        gridcode = zones.loc[i, "gridcode"]
+        gridcode = zones.loc[i, "DN"]
 
         count = stat["count"]
 
@@ -171,7 +171,7 @@ def zonal_statistics_as_table(shp_in, tif_in):
     # Ordena por "gridcode"
     df = df.sort_values("gridcode")
 
-    txt_out = fr"{manning_directorio}\{cfcc}_LandUseTable_{opcion}.txt"
+    txt_out = fr"{cfcc_directorio}\{cfcc}_LandUseTable_{opcion}.txt"
 
     df.to_csv(txt_out, index=False, sep="\t")
 
