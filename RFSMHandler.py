@@ -303,14 +303,12 @@ class RFSMHandler:
                 writer = csv.writer(fW)
                 writer.writerow(['BCSetID', 'IZID', 'CManning'])
 
-        # CManning matrix
         TestCManning = np.empty((0, 3))
-        for CMIndex in range(len(CManningList)):
-            CManningToAdd = CManningList[CMIndex]
 
-            for rowIndex in range(len(CManningToAdd['IZList'])):
-                newRow = [BCSetID, CManningToAdd['IZList'][rowIndex], CManningToAdd['IZCManning'][rowIndex]]
-                TestCManning = np.vstack((TestCManning, newRow))
+        # CManning matrix
+        for rowIZL, rowIZCM in zip(CManningList['IZList'].tolist()[0], CManningList['IZCManning'].tolist()[0]):
+            newRow = [BCSetID, rowIZL, rowIZCM]
+            TestCManning = np.vstack((TestCManning, newRow))
 
         with open(self.csv_tusrIZManning, 'a', newline='') as fW:
             writer = csv.writer(fW)

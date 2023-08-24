@@ -35,6 +35,11 @@ smalleriz = 10000
 
 lucascorine_tif = "D:\LucasCorine_30m_2019.tif"
 
+# Additional functionalities of the model
+Rough_act = 0  # 1/0 to activate or not the variable manning roughness. If Rough_act = 0 a constant roughness (Input.ManningGlobalValue) is used
+Levelout_act = 0  # 1/0 to activate or not drainage cells
+River_act = 0  # 1/0 to activate or not the discharge point as if it were a river
+
 polygonize_directorio = r'C:\Users\gprietod\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts\gdal_polygonize.py'
 translate_directorio = r"C:\Users\gprietod\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\osgeo\gdal_translate.exe"
 
@@ -66,10 +71,10 @@ def asc2tif(asc_in, epsg):
 
 def main_RFSM():
     # Genera IZCoasts
-    izcoast.listIZCoast(mdt, coast, buffer, izmin, izmax, smalleriz, path_case, polygonize_directorio)
+    #izcoast.listIZCoast(mdt, coast, buffer, izmin, izmax, smalleriz, path_case, polygonize_directorio)
 
     # Genera Manning
-    manning.generation_manning_file(path_main, control_case, option, mdt, lucascorine_tif, polygonize_directorio, EPSG)
+    #manning.generation_manning_file(path_main, control_case, option, mdt, lucascorine_tif, polygonize_directorio, EPSG)
 
     # Add RFSM-EDA
     path_site = os.path.join(path_case, 'RFSM-results', mesh)
@@ -91,11 +96,6 @@ def main_RFSM():
     path_inputs = os.path.join(path_case, 'input_dynamics')
     if not os.path.exists(path_inputs):
         os.makedirs(path_inputs)
-
-    # Additional functionalities of the model
-    Rough_act = 0  # 1/0 to activate or not the variable manning roughness. If Rough_act = 0 a constant roughness (Input.ManningGlobalValue) is used
-    Levelout_act = 0  # 1/0 to activate or not drainage cells
-    River_act = 0  # 1/0 to activate or not the discharge point as if it were a river
 
 
     # Copiamos de la carpeta de la malla en la carpeta RFSM-results (sites) los archivos que lee RFSM
@@ -139,7 +139,7 @@ def main_RFSM():
         if Rough_act == 1:
             shutil.copy(os.path.join(path_mesh, 'CManning.mat'), path_site_case)
             mc = scipy.io.loadmat(os.path.join(path_site_case, 'CManning.mat'))
-            CManningList = mc['CManningList']
+            CManningList = mc
             RFSMH.SetCManningList(BCSetID, CManningList)
         
         Input = InputXML()

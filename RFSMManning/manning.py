@@ -18,6 +18,8 @@ import subprocess
 
 from pyproj import CRS
 
+import scipy.io as sio
+
 
 manning_directorio = None
 cfcc = None
@@ -237,17 +239,11 @@ def manning_roughness_coefficient():
 
     # INPUT RFSM-EDA - MANNING ROUGHNESS
     ManningCoef = np.loadtxt(os.path.join(path_mesh, 'CoefManning.dat'))
-    CManningList = []
 
-    for k in range(len(ManningCoef)):
-        iz_list = ManningCoef[k, 0]
-        iz_cmanning = ManningCoef[k, 1]
-        CManningList.append({'IZList': iz_list, 'IZCManning': iz_cmanning})
+    CManningDict = {'IZList': ManningCoef[:, 0], 'IZCManning': ManningCoef[:, 1]}
 
-    np.save(os.path.join(path_mesh, 'CManning.npy'), CManningList)
-
-
-
+    sio.savemat(os.path.join(path_mesh, 'CManning.mat'), CManningDict)
+    
 
 def generation_manning_file(path_main, control_case, option, mdt, lucascorine_tif, polygonize_directorio, EPSG):
 
