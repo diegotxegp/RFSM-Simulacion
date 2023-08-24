@@ -71,10 +71,10 @@ def asc2tif(asc_in, epsg):
 
 def main_RFSM():
     # Genera IZCoasts
-    #izcoast.listIZCoast(mdt, coast, buffer, izmin, izmax, smalleriz, path_case, polygonize_directorio)
+    izcoast.listIZCoast(mdt, coast, buffer, izmin, izmax, smalleriz, path_case, polygonize_directorio)
 
     # Genera Manning
-    #manning.generation_manning_file(path_main, control_case, option, mdt, lucascorine_tif, polygonize_directorio, EPSG)
+    manning.generation_manning_file(path_main, control_case, option, mdt, lucascorine_tif, polygonize_directorio, EPSG)
 
     # Add RFSM-EDA
     path_site = os.path.join(path_case, 'RFSM-results', mesh)

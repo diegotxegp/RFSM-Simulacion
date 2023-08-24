@@ -24,7 +24,7 @@ cfcc = None
 res = None
 
 """
-Constructor de varibles globales
+Constructor de variables globales
 """
 def init(mdt1, coast1, buffer1, izmin1, izmax1, smalleriz1, path_case1, polygonize_directorio1):
 
@@ -232,7 +232,7 @@ def listIZCoast_function():
     mascara = np.isin(listIZCoast[:, 0], izCoast_gridcode["DN"])
     listIZCoast_correg = listIZCoast[mascara]
 
-    with open(f"{directorio_dem}\{cfcc}IZCoast_correg{res}.txt",'w') as f:
+    with open(f"{directorio_dem}\IZCoast_correg.txt",'w') as f:
         for fila in listIZCoast_correg:
             linea = "\t".join(str(elemento) for elemento in fila)
             f.write(linea + "\n")

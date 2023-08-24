@@ -297,11 +297,13 @@ class RFSMHandler:
         # CManningList.IZList = [IZID1, IZID2, ...];
         # CManningList.IZCManning = [IZCManning1, IZCManning2, ...];
 
-        # Make tusrIZManning if don't exist
-        if not os.path.exists(self.csv_tusrIZManning):
-            with open(self.csv_tusrIZManning, 'w', newline='') as fW:
-                writer = csv.writer(fW)
-                writer.writerow(['BCSetID', 'IZID', 'CManning'])
+        if os.path.exists(self.csv_tusrIZManning):
+            os.remove(self.csv_tusrIZManning)
+
+        # Make tusrIZManning
+        with open(self.csv_tusrIZManning, 'w', newline='') as fW:
+            writer = csv.writer(fW)
+            writer.writerow(['BCSetID', 'IZID', 'CManning'])
 
         TestCManning = np.empty((0, 3))
 
