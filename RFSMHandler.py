@@ -303,7 +303,7 @@ class RFSMHandler:
         # Make tusrIZManning
         with open(self.csv_tusrIZManning, 'w', newline='') as fW:
             writer = csv.writer(fW)
-            writer.writerow(['BCSetID', 'IZID', 'CManning'])
+            writer.writerow(['BCSetID', ' IZID', ' CManning'])
 
         TestCManning = np.empty((0, 3))
 
@@ -312,9 +312,12 @@ class RFSMHandler:
             newRow = [BCSetID, rowIZL, rowIZCM]
             TestCManning = np.vstack((TestCManning, newRow))
 
-        with open(self.csv_tusrIZManning, 'a', newline='') as fW:
-            writer = csv.writer(fW)
-            writer.writerows(TestCManning)
+        with open(self.csv_tusrIZManning, 'a', newline='') as f:
+            for row in TestCManning:
+                formatted_row = [int(row[0]), int(row[1]), float(row[2])]
+                row_str = ', '.join(map(str, formatted_row))
+                f.write(row_str + '\n')
+                
 
     def SetRainfall(self, RainFallZonesList):
         # Set case Rainfall from RainFallZones

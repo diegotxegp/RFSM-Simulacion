@@ -33,10 +33,10 @@ izmin = 20000
 izmax = 40000
 smalleriz = 10000
 
-lucascorine_tif = "D:\LucasCorine_30m_2019.tif"
+lucascorine_tif = "D:\LucasCorine_30m_2019.tif" # Complete path
 
 # Additional functionalities of the model
-Rough_act = 0  # 1/0 to activate or not the variable manning roughness. If Rough_act = 0 a constant roughness (Input.ManningGlobalValue) is used
+Rough_act = 1  # 1/0 to activate or not the variable manning roughness. If Rough_act = 0 a constant roughness (Input.ManningGlobalValue) is used
 Levelout_act = 0  # 1/0 to activate or not drainage cells
 River_act = 0  # 1/0 to activate or not the discharge point as if it were a river
 
