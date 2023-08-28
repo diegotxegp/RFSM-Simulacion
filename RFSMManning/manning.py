@@ -240,7 +240,7 @@ def manning_roughness_coefficient():
     # INPUT RFSM-EDA - MANNING ROUGHNESS
     ManningCoef = np.loadtxt(os.path.join(path_mesh, 'CoefManning.dat'))
 
-    CManningDict = {'IZList': ManningCoef[:, 0], 'IZCManning': ManningCoef[:, 1]}
+    CManningDict = {'IZList': ManningCoef[:, 0].reshape(-1, 1), 'IZCManning': ManningCoef[:, 1].reshape(-1, 1)}
 
     sio.savemat(os.path.join(path_mesh, 'CManning.mat'), CManningDict)
     

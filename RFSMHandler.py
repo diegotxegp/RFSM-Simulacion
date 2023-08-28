@@ -308,7 +308,7 @@ class RFSMHandler:
         TestCManning = np.empty((0, 3))
 
         # CManning matrix
-        for rowIZL, rowIZCM in zip(CManningList['IZList'].tolist()[0], CManningList['IZCManning'].tolist()[0]):
+        for rowIZL, rowIZCM in zip(CManningList['IZList'].reshape(1, -1).tolist()[0], CManningList['IZCManning'].reshape(1, -1).tolist()[0]):
             newRow = [BCSetID, rowIZL, rowIZCM]
             TestCManning = np.vstack((TestCManning, newRow))
 
@@ -317,7 +317,7 @@ class RFSMHandler:
                 formatted_row = [int(row[0]), int(row[1]), float(row[2])]
                 row_str = ', '.join(map(str, formatted_row))
                 f.write(row_str + '\n')
-                
+
 
     def SetRainfall(self, RainFallZonesList):
         # Set case Rainfall from RainFallZones

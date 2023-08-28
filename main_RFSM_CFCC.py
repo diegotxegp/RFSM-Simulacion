@@ -40,15 +40,19 @@ Rough_act = 1  # 1/0 to activate or not the variable manning roughness. If Rough
 Levelout_act = 0  # 1/0 to activate or not drainage cells
 River_act = 0  # 1/0 to activate or not the discharge point as if it were a river
 
-polygonize_directorio = r'C:\Users\gprietod\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts\gdal_polygonize.py'
+polygonize_directorio = r"C:\Users\gprietod\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts\gdal_polygonize.py"
 translate_directorio = r"C:\Users\gprietod\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\osgeo\gdal_translate.exe"
 
 #######################################################################################################################################################
 
+if not Rough_act:
+    case_name = control_case + '_' + option + '_' + flood_case + alpha + "_man_cte"
+else:
+    case_name = control_case + '_' + option + '_' + flood_case + alpha + "_man_var"
+
 path_case = os.path.join(path_main, control_case)
 mesh = os.path.splitext(mdt)[0]
 path_mesh = os.path.join(path_case,mesh)
-case_name = control_case + '_' + option + '_' + flood_case + alpha
 
 """
 Conversor de formato ASCII a formato TIFF
@@ -84,6 +88,8 @@ def main_RFSM():
     path_site_case = os.path.join(path_site, case_name)
     if not os.path.exists(path_site_case):
         os.makedirs(path_site_case)
+    else:
+        shutil.rmtree(path_site_case)
 
     path_test = os.path.join(path_site_case, 'tests')
     if not os.path.exists(path_test):
@@ -156,7 +162,7 @@ def main_RFSM():
         Input.MaxTimeStep = 20
         Input.MinTimeStep = 0.01
         Input.AlphaParameter = 0.8
-        Input.ManningGlobalValue = 0.05
+        Input.ManningGlobalValue = 0.15
         Input.Results = '1'
         Input.LogVerbose = '0'
 
