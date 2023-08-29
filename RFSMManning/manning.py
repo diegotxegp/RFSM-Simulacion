@@ -1,7 +1,7 @@
 #!/home/local/bin/python3
 # -*- coding: utf-8 -*-
 
-from osgeo import gdal
+from osgeo import gdal, ogr
 
 import geopandas as gpd
 import numpy as np
@@ -104,6 +104,8 @@ def extract_by_mask(tif_in, shp_in):
     # Obtén la geometría de la máscara del shapefile
     mask_geometry = shp.geometry.unary_union
 
+    shp.to_file(os.path.join(cfcc_directorio, "mask_geometry.shp"))
+
     # Recorta el archivo raster utilizando la geometría del shapefile como máscara
     cropped_image, cropped_transform = mask(tif, [mask_geometry], crop=True)
 
@@ -125,25 +127,25 @@ def extract_by_mask(tif_in, shp_in):
     tif.close()
     shp = None
 
+    print("Mask done")
+
 """
 Resample
 """
-def resample(tif_in, res):
+def resample(tif_in, shp_in, res):
     # Abrir el archivo de entrada
     dataset = gdal.Open(tif_in)
 
-    # Obtener información de la banda
-    banda = dataset.GetRasterBand(1)
-    nodata_value = banda.GetNoDataValue()
-
     # Crear una copia del archivo de entrada con la nueva resolución
     tif_out = os.path.splitext(tif_in)[0]+f"_{res}.tif"
-    gdal.Warp(tif_out, dataset, xRes=res, yRes=res, dstNodata=nodata_value, resampleAlg=gdal.GRIORA_Bilinear)
+    gdal.Warp(tif_out, dataset, format="GTiff", xRes=res, yRes=res, dstNodata=0, resampleAlg=gdal.GRIORA_NearestNeighbour, targetAlignedPixels=True)
 
     # Cerrar el dataset
     dataset = None
 
     print("Resolution changed")
+
+    return tif_out
 
 
 """
@@ -251,6 +253,7 @@ def generation_manning_file(path_main, control_case, option, mdt, lucascorine_ti
     res = resolution(dem)
     cfcc_shp = asc_to_shp(dem)
     extract_by_mask(lucascorine_tif, os.path.join(cfcc_directorio, cfcc_shp))
-    resample(os.path.join(cfcc_directorio,f"{lucascorine}_masked.tif"), res)
+    tif = resample(os.path.join(cfcc_directorio,f"{lucascorine}_masked.tif"), os.path.join(cfcc_directorio, cfcc_shp), res)
+    #extract_by_mask(tif, os.path.join(cfcc_directorio, cfcc_shp))
     zonal_statistics_as_table(os.path.join(path_mesh,f"{cfcc}_izid2_{opcion}.shp"), os.path.join(cfcc_directorio,f"{lucascorine}_masked_{res}.tif"))
     manning_roughness_coefficient()

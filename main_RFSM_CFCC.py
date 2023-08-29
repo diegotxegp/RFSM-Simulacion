@@ -20,14 +20,14 @@ from RFSMManning import manning
 ######################################################################################################################################################
 # Dir general
 path_main = r"D:\RFSM\Casos_control"
-control_case = "CFCC08"
+control_case = "CFCC05"
 option = "A"
-mdt = "cfcc08_dem_a.asc"
+mdt = "cfcc05_dem_a.asc"
 flood_case = "storm_dyn"  # 'storm_sta' or 'storm_dyn'
 alpha = ""  # empty: no alpha / '_alpha1' or '_alpha2' or '_alpha3' or whatever alpha case you want to simulate
 EPSG = 3035
 
-coast = "CFCC08_coast_A.shp" # Si indicas "coast", "buffer" quedará vacío y se generará desde "coast"
+coast = "CFCC05_coast_A.shp" # Si indicas "coast", "buffer" quedará vacío y se generará desde "coast"
 buffer = ""
 izmin = 20000
 izmax = 40000
