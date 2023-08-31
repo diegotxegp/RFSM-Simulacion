@@ -252,9 +252,11 @@ def main_RFSM():
         toc = time.time()
         print("Elapsed Time:", toc-tic)
 
-        print(f"################## {case_name} executed #####################")
 
         parameters2txt(os.path.join(path_test,"parameters-RFSM.txt"))
+
+        print(f"################## {case_name} executed #####################")
+
 
 
 if __name__ == "__main__":
