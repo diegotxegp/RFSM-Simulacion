@@ -6,7 +6,9 @@ import shutil
 import scipy
 import time
 import rasterio
+import geopandas as gpd
 from pyproj import CRS
+import xarray as xr
 
 from RFSMHandler import *
 from InputXML import *
@@ -16,22 +18,17 @@ from Meshgrid2Ascii import *
 from IZCoast import izcoast
 from RFSMManning import manning
 
+from DiegoLibrary import asc2nc, crs_from_shp
+
 ################################################ MODIFICAR AQUÍ ######################################################################################
 ######################################################################################################################################################
 # Dir general
-path_main = r"D:\RFSM\Casos_control"
-control_case = "CFCC05"
-option = "A"
-mdt = "cfcc05_dem_a.asc"
+mdt = "D:\RFSM\Casos_control\CFCC05\cfcc05_dem_a.asc" #Path completo
 flood_case = "storm_dyn"  # 'storm_sta' or 'storm_dyn'
 alpha = ""  # empty: no alpha / '_alpha1' or '_alpha2' or '_alpha3' or whatever alpha case you want to simulate
-EPSG = 3035
 
-coast = "CFCC05_coast_A.shp" # Si indicas "coast", "buffer" quedará vacío y se generará desde "coast"
+coast = "D:\RFSM\Casos_control\CFCC05\CFCC05_coast_A.shp" # Si indicas "coast", "buffer" quedará vacío y se generará desde "coast"
 buffer = ""
-izmin = 20000
-izmax = 40000
-smalleriz = 10000
 
 lucascorine_tif = "D:\LucasCorine_30m_2019.tif" # Complete path
 
@@ -40,19 +37,27 @@ Rough_act = 1  # 1/0 to activate or not the variable manning roughness. If Rough
 Levelout_act = 0  # 1/0 to activate or not drainage cells
 River_act = 0  # 1/0 to activate or not the discharge point as if it were a river
 
+format = "tiff" # tiff = result.tif / netcdf = result.nc
+
 polygonize_directorio = r"C:\Users\gprietod\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts\gdal_polygonize.py"
 translate_directorio = r"C:\Users\gprietod\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\osgeo\gdal_translate.exe"
 
 #######################################################################################################################################################
+
+path_case = os.path.dirname(mdt)
+control_case = os.path.splitext(os.path.basename(mdt))[0][0:6].upper()
+option = os.path.splitext(os.path.basename(mdt))[0][-1].upper()
 
 if not Rough_act:
     case_name = control_case + '_' + option + '_' + flood_case + alpha + "_man_cte"
 else:
     case_name = control_case + '_' + option + '_' + flood_case + alpha + "_man_var"
 
-path_case = os.path.join(path_main, control_case)
-mesh = os.path.splitext(mdt)[0]
+mesh = os.path.splitext(os.path.basename(mdt))[0]
 path_mesh = os.path.join(path_case,mesh)
+
+crs_coast = crs_from_shp(coast)
+epsg = crs_coast.to_epsg()
 
 """
 Conversor de formato ASCII a formato TIFF
@@ -73,12 +78,63 @@ def asc2tif(asc_in, epsg):
 
     return tif_out
 
+
+"""
+Convierte un mapa ASC a NETCDF
+"""
+def asc2nc(asc_in, epsg):
+    with rasterio.open(asc_in) as asc:
+        data = asc.read(1)  # Lee la banda del raster
+
+        # Obtén información necesaria del archivo ASC
+        transform = asc.transform
+        nodata = asc.nodata
+
+        # Crea un objeto DataArray de xarray
+        data_array = xr.DataArray(data, dims=('y', 'x'), coords={'x': asc.bounds.left + asc.res[0] * (0.5 + np.arange(asc.width)),
+                                                                 'y': asc.bounds.top - asc.res[1] * (0.5 + np.arange(asc.height))})
+
+        crs = CRS.from_epsg(epsg)
+
+        # Agrega atributos a la variable
+        data_array.attrs['transform'] = transform.to_gdal()
+        data_array.attrs['crs'] = crs.to_string()
+        data_array.attrs['_FillValue'] = nodata
+
+        # Crea un conjunto de datos Dataset de xarray
+        dataset = xr.Dataset({'data': data_array})
+
+        nc_out = os.path.splitext(asc_in)[0] + ".nc"
+
+        # Guarda el conjunto de datos en formato NetCDF
+        dataset.to_netcdf(nc_out)
+
+        print("NC created")
+
+"""
+Guarda en un fichero los parámetros usados para ejecutar RFSM
+"""
+def parameters2txt(file_txt):
+    with open(file_txt, "w") as f:
+        f.write(f"mdt = {mdt}\n")
+        f.write(f"case_name = {case_name}\n")
+        f.write(f"coast = {coast}\n")
+        f.write(f"buffer = {buffer}\n")
+        f.write(f"lucascorine_tif = {lucascorine_tif}\n")
+        f.write(f"Rough_act = {Rough_act}\n")
+        f.write(f"Levelout_act = {Levelout_act}\n")
+        f.write(f"River_act = {River_act}\n")
+        f.write(f"result_format = {format}\n")
+        f.write(f"polygonize_directorio = {polygonize_directorio}\n")
+        f.write(f"translate_directorio = {translate_directorio}\n")
+
+
 def main_RFSM():
     # Genera IZCoasts
-    izcoast.listIZCoast(mdt, coast, buffer, izmin, izmax, smalleriz, path_case, polygonize_directorio)
+    izcoast.listIZCoast(mdt, coast, buffer, polygonize_directorio)
 
     # Genera Manning
-    manning.generation_manning_file(path_main, control_case, option, mdt, lucascorine_tif, polygonize_directorio, EPSG)
+    manning.generation_manning_file(mdt, lucascorine_tif, polygonize_directorio, epsg)
 
     # Add RFSM-EDA
     path_site = os.path.join(path_case, 'RFSM-results', mesh)
@@ -188,10 +244,17 @@ def main_RFSM():
         XX, YY, ZZ = XYZ2Raster(x, y, level_max)
         Meshgrid2Ascii(f_export, XX, YY, ZZ, -9)
 
-        new_tif = asc2tif(f_export,EPSG)
+        if format == "tiff":
+            new_tif = asc2tif(f_export,epsg)
+        else:
+            new_nc = asc2nc(f_export,epsg)
 
         toc = time.time()
         print("Elapsed Time:", toc-tic)
+
+        print(f"################## {case_name} executed #####################")
+
+        parameters2txt(os.path.join(path_test,"parameters-RFSM.txt"))
 
 
 if __name__ == "__main__":

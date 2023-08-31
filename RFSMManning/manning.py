@@ -20,8 +20,9 @@ from pyproj import CRS
 
 import scipy.io as sio
 
+from DiegoLibrary import resolution_asc
 
-manning_directorio = None
+
 cfcc = None
 opcion = None
 mdt = None
@@ -39,28 +40,25 @@ dem = None
 """
 Constructor de varibles globales
 """
-def init(path_main1, control_case1, option1, mdt1, lucascorine_tif1, polygonize_directorio1, EPSG1):
+def init(mdt1, lucascorine_tif1, polygonize_directorio1, EPSG1):
 
-    global manning_directorio, cfcc, opcion, mdt, EPSG, polygonize_directorio, cfcc_directorio, path_mesh, lucascorine, dem
+    global cfcc, opcion, mdt, EPSG, polygonize_directorio, cfcc_directorio, path_mesh, lucascorine, dem
 
-    manning_directorio = path_main1
-    cfcc = control_case1
-    opcion = option1
-    mdt = mdt1
+    mdt = os.path.basename(mdt1)
+    cfcc_directorio = os.path.dirname(mdt1)
+    cfcc = os.path.splitext(mdt)[0][0:6].upper()
+    opcion = os.path.splitext(mdt)[0][-1].upper()
     lucascorine_tif = lucascorine_tif1
     EPSG = EPSG1
 
     polygonize_directorio = polygonize_directorio1
-
-
-    cfcc_directorio = os.path.join(manning_directorio, cfcc)
 
     mesh = f"{cfcc.lower()}_dem_{opcion.lower()}"
     path_mesh = os.path.join(cfcc_directorio, mesh)
 
     lucascorine = os.path.splitext(os.path.basename(lucascorine_tif))[0]
 
-    dem = os.path.join(manning_directorio, cfcc, mdt)
+    dem = os.path.join(cfcc_directorio, mdt)
 
 
 """
@@ -79,35 +77,21 @@ def asc_to_shp(asc_in):
     shp_destino.to_file(shp_out,crs=CRS.from_epsg(EPSG))
 
     return shp_out
-
-
-"""
-Devuelve la resolución desde el mdt
-"""
-def resolution(dem_asc):
-    with open(dem_asc, 'r') as file:
-        for line in file:
-            if 'cellsize' in line:
-                # Elimina los espacios en blanco y divide la línea en palabras
-                words = line.strip().split()
-                resolucion = int(words[1])
-                return resolucion
+            
 
 """
 Recorta la imagen tiff acorde al área indicada
 """
-def extract_by_mask(tif_in, shp_in, buffer, res):
+def extract_by_mask(tif_in, shp_in):
     # Abre el archivo raster y el archivo shapefile
     tif = rasterio.open(tif_in)
     shp = gpd.read_file(shp_in)
 
-    if buffer:
-        shp = shp.buffer(2*res, join_style=2)
+    res = resolution_asc(dem)
+    shp = shp.buffer(res, join_style=2)
 
     # Obtén la geometría de la máscara del shapefile
     mask_geometry = shp.geometry.unary_union
-
-    shp.to_file(os.path.join(cfcc_directorio, "extended_shp.shp"))
 
     # Recorta el archivo raster utilizando la geometría del shapefile como máscara
     cropped_image, cropped_transform = mask(tif, [mask_geometry], crop=True)
@@ -132,12 +116,16 @@ def extract_by_mask(tif_in, shp_in, buffer, res):
 
     print("Mask done")
 
+    return tif_out
+
 """
 Resample
 """
-def resample(tif_in, shp_in, res):
+def resample(tif_in):
     # Abrir el archivo de entrada
     dataset = gdal.Open(tif_in)
+
+    res = resolution_asc(dem)
 
     # Crear una copia del archivo de entrada con la nueva resolución
     tif_out = os.path.splitext(tif_in)[0]+f"_{res}.tif"
@@ -249,14 +237,15 @@ def manning_roughness_coefficient():
 
     sio.savemat(os.path.join(path_mesh, 'CManning.mat'), CManningDict)
     
+"""
+Genera un fichero Manning a partir del uso del suelo del Lucas Corine y el mdt que se quiere observar 
+"""
+def generation_manning_file(mdt, lucascorine_tif, polygonize_directorio, EPSG):
 
-def generation_manning_file(path_main, control_case, option, mdt, lucascorine_tif, polygonize_directorio, EPSG):
-
-    init(path_main, control_case, option, mdt, lucascorine_tif, polygonize_directorio, EPSG)
-    res = resolution(dem)
-    cfcc_shp = asc_to_shp(dem)
-    extract_by_mask(lucascorine_tif, os.path.join(cfcc_directorio, cfcc_shp), 1, res)
-    tif = resample(os.path.join(cfcc_directorio,f"{lucascorine}_masked.tif"), os.path.join(cfcc_directorio, cfcc_shp), res)
-    extract_by_mask(tif, os.path.join(cfcc_directorio, cfcc_shp), 0, res)
-    zonal_statistics_as_table(os.path.join(path_mesh,f"{cfcc}_izid2_{opcion}.shp"), os.path.join(cfcc_directorio,f"{lucascorine}_masked.tif"))
+    init(mdt, lucascorine_tif, polygonize_directorio, EPSG)
+    dem_shp = asc_to_shp(dem)
+    masked_tif = extract_by_mask(lucascorine_tif, dem_shp)
+    resampled_tif = resample(masked_tif)
+    #extract_by_mask(tif, os.path.join(cfcc_directorio, cfcc_shp), 0, res)
+    zonal_statistics_as_table(os.path.join(path_mesh,f"{cfcc}_izid2_{opcion}.shp"), resampled_tif)
     manning_roughness_coefficient()

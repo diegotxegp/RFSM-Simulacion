@@ -8,43 +8,58 @@ import subprocess
 import os
 import time
 
+from DiegoLibrary import resolution_asc
+
 
 directorio_cfcc = None
 polygonize_directorio = None
 
 mdt = None
-coast = None # Si indicas "coast", "buffer" quedará vacío y se generará desde "coast"
+coast = None # Si indicas "coast", "buffer" quedará vacío y se generará un nuevo buffer desde la linea marcada por "coast"
 buffer = None
-izmin = None
-izmax = None
-smalleriz = None
+res_ref = 25
+izmin = 20000
+izmax = 40000
+smalleriz = 10000
 
 directorio_dem = None
 cfcc = None
-res = None
+opt = None
+
 
 """
 Constructor de variables globales
 """
-def init(mdt1, coast1, buffer1, izmin1, izmax1, smalleriz1, path_case1, polygonize_directorio1):
+def init(mdt1, coast1, buffer1, polygonize_directorio1):
 
-    global directorio_cfcc, polygonize_directorio, mdt, coast, buffer, izmin, izmax, smalleriz, directorio_dem, cfcc, res
-
-    directorio_cfcc = path_case1
-    polygonize_directorio = polygonize_directorio1
+    global directorio_cfcc, polygonize_directorio, mdt, coast, buffer, directorio_dem, cfcc, opt
 
     mdt = mdt1
+
+    directorio_cfcc = os.path.dirname(mdt)
+    polygonize_directorio = polygonize_directorio1
+
     coast = coast1 # Si indicas "coast", "buffer" quedará vacío y se generará desde "coast"
     buffer = buffer1
-    izmin = izmin1
-    izmax = izmax1
-    smalleriz = smalleriz1
+    
 
-    directorio_dem = os.path.join(directorio_cfcc, os.path.splitext(mdt)[0]) # Sacar nombre que daremos a la nueva carpeta donde se guardarán los ficheros a partir del nombre del mdt
+    directorio_dem = os.path.splitext(mdt)[0] # Sacar nombre que daremos a la nueva carpeta donde se guardarán los ficheros a partir del nombre del mdt
 
-    cfcc = mdt[0:7].upper() # Nombre del directorio principal CFCC## donde están los ficheros base
-    res = mdt[-6:-4].upper() # Letra de la resolucion (A/B)
+    cfcc = os.path.basename(mdt)[0:7].upper() # Nombre del directorio principal CFCC## donde están los ficheros base
+    opt = os.path.basename(mdt)[-5:-4].upper() # Letra de la resolucion (A/B)
 
+"""
+Asigna el tamaño de las IZ según la resolución
+"""
+def iz_size(asc_in):
+
+    res = resolution_asc(asc_in)
+
+    izmin_out = res*izmin/res_ref
+    izmax_out = res*izmax/res_ref
+    smalleriz_out = res*smalleriz/res_ref
+
+    return res, izmin_out, izmax_out, smalleriz_out
 
 """
 Genera la malla de celdas irregulares izid2.
@@ -52,9 +67,11 @@ Genera la malla de celdas irregulares izid2.
 def generateMesh_CFCC():
     FNULL = open(os.devnull, 'w') # use this if you want to suppress output to stdout from the subprocess
     accdata = r".\IZCoast\accdata.exe"
-    dem = fr"{directorio_cfcc}\{mdt}"
     #command = [accdata, "irregular", "-izmin", str(izmin), "-izmax", str(izmax), "-smalleriz", str(smalleriz), "-noizid1", dem]
-    args = f"{accdata} irregular -izmin {izmin} -izmax {izmax} -smalleriz {smalleriz} -noizid1 \"{dem}\""
+
+    res,izmin,izmax,smalleriz = iz_size(mdt)
+
+    args = f"{accdata} irregular -izmin {izmin} -izmax {izmax} -smalleriz {smalleriz} -noizid1 \"{mdt}\""
     subprocess.call(args, stdout=FNULL, stderr=FNULL, shell=False)
     print("izid2.asc created")
 
@@ -64,7 +81,7 @@ Genera el icBoundary del contorno de la malla.
 def extract_icBoundary_CFCC():
     start = time.time()
     pathfInput = f"{directorio_dem}\izid2.asc"
-    pathfTopo = f"{directorio_cfcc}\{mdt}"
+    pathfTopo = mdt
     hMax = 15
     hMin = 0
     #------------------------------------------------------------------------------#
@@ -186,7 +203,7 @@ Mantener el sistema de coordenadas
 def keep_spatial_reference(shp):
 
     # Guardamos el EPSG
-    buffer_shp = gpd.read_file(f"{directorio_cfcc}\{buffer}")
+    buffer_shp = gpd.read_file(buffer)
     epsg = buffer_shp.crs
 
     shp_destino = gpd.read_file(shp)
@@ -199,10 +216,10 @@ def icCoast_function():
 
     print("icCoast")
 
-    icBoundary = gpd.read_file(f"{directorio_dem}\{cfcc}icBoundary{res}.shp")
-    coast_buffer = gpd.read_file(f"{directorio_cfcc}\{buffer}")
+    icBoundary = gpd.read_file(f"{directorio_dem}\{cfcc}icBoundary{opt}.shp")
+    coast_buffer = gpd.read_file(buffer)
     icCoast = icBoundary[icBoundary.geometry.intersects(coast_buffer.unary_union)]
-    icCoast.to_file(f"{directorio_dem}\{cfcc}icCoast{res}.shp")
+    icCoast.to_file(f"{directorio_dem}\{cfcc}icCoast{opt}.shp")
 
 
 """
@@ -212,10 +229,10 @@ def izCoast_function():
 
     print("izCoast")
 
-    izid2 = gpd.read_file(f"{directorio_dem}\{cfcc}izid2{res}.shp")
-    icCoast = gpd.read_file(f"{directorio_dem}\{cfcc}icCoast{res}.shp")
+    izid2 = gpd.read_file(f"{directorio_dem}\{cfcc}izid2{opt}.shp")
+    icCoast = gpd.read_file(f"{directorio_dem}\{cfcc}icCoast{opt}.shp")
     izCoast = izid2[izid2.geometry.overlaps(icCoast.unary_union)]
-    izCoast.to_file(f"{directorio_dem}\{cfcc}izCoast{res}.shp")
+    izCoast.to_file(f"{directorio_dem}\{cfcc}izCoast{opt}.shp")
 
 """
 Cargar lista total "listIZCoast.txt" y seleccionar sólo las celdas costeras indicadas por "izCoast"
@@ -225,7 +242,7 @@ def listIZCoast_function():
     print("listIZCoast")
 
     listIZCoast = np.loadtxt(f"{directorio_dem}\listIZCoast.txt", skiprows=1)
-    izCoast = gpd.read_file(f"{directorio_dem}\{cfcc}izCoast{res}.shp")
+    izCoast = gpd.read_file(f"{directorio_dem}\{cfcc}izCoast{opt}.shp")
     izCoast_df = pd.DataFrame(izCoast)
     izCoast_df = izCoast_df.drop_duplicates(subset="DN")
     izCoast_gridcode = izCoast_df.sort_values(by="DN")
@@ -237,42 +254,30 @@ def listIZCoast_function():
             linea = "\t".join(str(elemento) for elemento in fila)
             f.write(linea + "\n")
 
+
 """
 Crea un buffer de una línea de costa
 """
-def coast_to_buffer(coast):
+def coast_to_buffer(coastLine):
 
     print("coast_to_buffer")
 
-    # Devuelve la resolución desde el mdt
-    def resolution(dem_asc):
-        with open(dem_asc, 'r') as file:
-            for line in file:
-                if 'cellsize' in line:
-                    # Elimina los espacios en blanco y divide la línea en palabras
-                    words = line.strip().split()
-                    resolucion = int(words[1])
-                    return resolucion
-                
-    
-    coastLine = fr"{directorio_cfcc}\{coast}"
     coastLine_gpd = gpd.read_file(coastLine)
 
-    dem = fr"{directorio_cfcc}\{mdt}"
-    resol = resolution(dem)
+    resol = resolution_asc(mdt)
     
     coast_buffer = coastLine_gpd.buffer(resol)
 
     global buffer 
-    buffer = f"{cfcc}coast_buffer{res}.shp"
-    coast_buffer.to_file(f"{directorio_cfcc}\{buffer}")
+    buffer = os.path.join(directorio_cfcc,f"{cfcc}coast_buffer{opt}.shp")
+    coast_buffer.to_file(buffer)
 
 
-def listIZCoast(mdt, coast, buffer, izmin, izmax, smalleriz, path_case, polygonize_directorio):
+def listIZCoast(mdt, coast, buffer, polygonize_directorio):
 
-    init(mdt, coast, buffer, izmin, izmax, smalleriz, path_case, polygonize_directorio)
+    init(mdt, coast, buffer, polygonize_directorio)
     
-    print(cfcc+res)
+    print(cfcc+opt)
 
     print("Loading...")
 
@@ -284,13 +289,13 @@ def listIZCoast(mdt, coast, buffer, izmin, izmax, smalleriz, path_case, polygoni
     generateMesh_CFCC()
 
     # izid2.asc to izid2.shp
-    asc_to_shp(f"{directorio_dem}\izid2.asc", f"{directorio_dem}\{cfcc}izid2{res}.shp")
+    asc_to_shp(f"{directorio_dem}\izid2.asc", f"{directorio_dem}\{cfcc}izid2{opt}.shp")
 
     # icBoundary
     extract_icBoundary_CFCC()
 
     # icBoundary.asc to icBoundary.shp
-    asc_to_shp(f"{directorio_dem}\icBoundary.asc", f"{directorio_dem}\{cfcc}icBoundary{res}.shp")
+    asc_to_shp(f"{directorio_dem}\icBoundary.asc", f"{directorio_dem}\{cfcc}icBoundary{opt}.shp")
 
 
     icCoast_function()
