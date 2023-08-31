@@ -96,15 +96,18 @@ def resolution(dem_asc):
 """
 Recorta la imagen tiff acorde al área indicada
 """
-def extract_by_mask(tif_in, shp_in):
+def extract_by_mask(tif_in, shp_in, buffer, res):
     # Abre el archivo raster y el archivo shapefile
     tif = rasterio.open(tif_in)
     shp = gpd.read_file(shp_in)
 
+    if buffer:
+        shp = shp.buffer(2*res, join_style=2)
+
     # Obtén la geometría de la máscara del shapefile
     mask_geometry = shp.geometry.unary_union
 
-    shp.to_file(os.path.join(cfcc_directorio, "mask_geometry.shp"))
+    shp.to_file(os.path.join(cfcc_directorio, "extended_shp.shp"))
 
     # Recorta el archivo raster utilizando la geometría del shapefile como máscara
     cropped_image, cropped_transform = mask(tif, [mask_geometry], crop=True)
@@ -252,8 +255,8 @@ def generation_manning_file(path_main, control_case, option, mdt, lucascorine_ti
     init(path_main, control_case, option, mdt, lucascorine_tif, polygonize_directorio, EPSG)
     res = resolution(dem)
     cfcc_shp = asc_to_shp(dem)
-    extract_by_mask(lucascorine_tif, os.path.join(cfcc_directorio, cfcc_shp))
+    extract_by_mask(lucascorine_tif, os.path.join(cfcc_directorio, cfcc_shp), 1, res)
     tif = resample(os.path.join(cfcc_directorio,f"{lucascorine}_masked.tif"), os.path.join(cfcc_directorio, cfcc_shp), res)
-    #extract_by_mask(tif, os.path.join(cfcc_directorio, cfcc_shp))
-    zonal_statistics_as_table(os.path.join(path_mesh,f"{cfcc}_izid2_{opcion}.shp"), os.path.join(cfcc_directorio,f"{lucascorine}_masked_{res}.tif"))
+    extract_by_mask(tif, os.path.join(cfcc_directorio, cfcc_shp), 0, res)
+    zonal_statistics_as_table(os.path.join(path_mesh,f"{cfcc}_izid2_{opcion}.shp"), os.path.join(cfcc_directorio,f"{lucascorine}_masked.tif"))
     manning_roughness_coefficient()
