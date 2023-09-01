@@ -3,6 +3,7 @@
 
 import os
 import shutil
+import subprocess
 import scipy
 import time
 import rasterio
@@ -23,14 +24,14 @@ from DiegoLibrary import asc2nc, crs_from_shp
 ################################################ MODIFICAR AQUÍ ######################################################################################
 ######################################################################################################################################################
 # Dir general
-mdt = "D:\RFSM\Casos_control\CFCC05\cfcc05_dem_a.asc" #Path completo
+mdt = "D:\RFSM\Casos_control\CFCC05\cfcc05_dem_a.asc" # Directorio completo
 flood_case = "storm_dyn"  # 'storm_sta' or 'storm_dyn'
 alpha = ""  # empty: no alpha / '_alpha1' or '_alpha2' or '_alpha3' or whatever alpha case you want to simulate
 
 coast = "D:\RFSM\Casos_control\CFCC05\CFCC05_coast_A.shp" # Si indicas "coast", "buffer" quedará vacío y se generará desde "coast"
 buffer = ""
 
-lucascorine_tif = "D:\LucasCorine_30m_2019.tif" # Complete path
+lucascorine_tif = "D:\LucasCorine_30m_2019.tif" # Directorio completo
 
 # Additional functionalities of the model
 Rough_act = 1  # 1/0 to activate or not the variable manning roughness. If Rough_act = 0 a constant roughness (Input.ManningGlobalValue) is used
