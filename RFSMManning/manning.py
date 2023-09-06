@@ -1,7 +1,7 @@
 #!/home/local/bin/python3
 # -*- coding: utf-8 -*-
 
-from osgeo import gdal, ogr
+from osgeo import gdal
 
 import geopandas as gpd
 import numpy as np

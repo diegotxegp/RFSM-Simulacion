@@ -40,10 +40,11 @@ River_act = 0  # 1/0 to activate or not the discharge point as if it were a rive
 
 format = "tiff" # tiff = result.tif / netcdf = result.nc
 
-polygonize_directorio = r"C:\Users\gprietod\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts\gdal_polygonize.py"
-translate_directorio = r"C:\Users\gprietod\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\osgeo\gdal_translate.exe"
-
 #######################################################################################################################################################
+
+user = os.getcwd()
+polygonize = fr"{user}\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts\gdal_polygonize.py"
+translate = fr"{user}\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\osgeo\gdal_translate.exe"
 
 path_case = os.path.dirname(mdt)
 control_case = os.path.splitext(os.path.basename(mdt))[0][0:6].upper()
@@ -68,7 +69,7 @@ def asc2tif(asc_in, epsg):
 
     print("ASCII to TIFF")
     tif_out = os.path.splitext(asc_in)[0]+".tif"
-    args = f"{translate_directorio} -of \"GTiff\" {asc_in} {tif_out}"
+    args = f"{translate} -of \"GTiff\" {asc_in} {tif_out}"
     subprocess.call(args, stdout=None, stderr=None, shell=False)
 
 
@@ -126,16 +127,16 @@ def parameters2txt(file_txt):
         f.write(f"Levelout_act = {Levelout_act}\n")
         f.write(f"River_act = {River_act}\n")
         f.write(f"result_format = {format}\n")
-        f.write(f"polygonize_directorio = {polygonize_directorio}\n")
-        f.write(f"translate_directorio = {translate_directorio}\n")
+        f.write(f"polygonize_directorio = {polygonize}\n")
+        f.write(f"translate_directorio = {translate}\n")
 
 
 def main_RFSM():
     # Genera IZCoasts
-    izcoast.listIZCoast(mdt, coast, buffer, polygonize_directorio)
+    izcoast.listIZCoast(mdt, coast, buffer, polygonize)
 
     # Genera Manning
-    manning.generation_manning_file(mdt, lucascorine_tif, polygonize_directorio, epsg)
+    manning.generation_manning_file(mdt, lucascorine_tif, polygonize, epsg)
 
     # Add RFSM-EDA
     path_site = os.path.join(path_case, 'RFSM-results', mesh)
