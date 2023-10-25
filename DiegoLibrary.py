@@ -89,7 +89,7 @@ def asc2nc(asc_in, epsg):
         data_array = xr.DataArray(data, dims=('y', 'x'), coords={'x': asc.bounds.left + asc.res[0] * (0.5 + np.arange(asc.width)),
                                                                  'y': asc.bounds.top - asc.res[1] * (0.5 + np.arange(asc.height))})
 
-        crs = pyproj.CRS.from_epsg(epsg)
+        crs = CRS.from_epsg(epsg)
 
         # Agrega atributos a la variable
         data_array.attrs['transform'] = transform.to_gdal()
