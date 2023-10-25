@@ -24,12 +24,12 @@ from DiegoLibrary import asc2nc, crs_from_shp
 ################################################ MODIFICAR AQUÍ ######################################################################################
 ######################################################################################################################################################
 # Dir general
-mdt = "D:\RFSM\Casos_control\CFCC05\cfcc05_dem_a.asc" # Directorio completo
+mdt = "D:\CFCC01\cfcc01_dem_a.asc" # Directorio completo
 flood_case = "storm_dyn"  # 'storm_sta' or 'storm_dyn'
 alpha = ""  # empty: no alpha / '_alpha1' or '_alpha2' or '_alpha3' or whatever alpha case you want to simulate
 
-coast = "D:\RFSM\Casos_control\CFCC05\CFCC05_coast_A.shp" # Si indicas "coast", "buffer" quedará vacío y se generará desde "coast"
-buffer = ""
+coast = "" # Si indicas "coast", "buffer" quedará vacío y se generará desde "coast"
+buffer = "D:\CFCC01\CFCC01_coast_buffer_A.shp"
 
 lucascorine_tif = "D:\LucasCorine_30m_2019.tif" # Directorio completo
 
@@ -42,9 +42,9 @@ format = "tiff" # tiff = result.tif / netcdf = result.nc
 
 #######################################################################################################################################################
 
-user = os.getcwd()
-polygonize = fr"{user}\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts\gdal_polygonize.py"
-translate = fr"{user}\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\osgeo\gdal_translate.exe"
+user = os.getlogin()
+polygonize = fr"C:\Users\{user}\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts\gdal_polygonize.py"
+translate = fr"C:\Users\{user}\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\osgeo\gdal_translate.exe"
 
 path_case = os.path.dirname(mdt)
 control_case = os.path.splitext(os.path.basename(mdt))[0][0:6].upper()
@@ -58,7 +58,10 @@ else:
 mesh = os.path.splitext(os.path.basename(mdt))[0]
 path_mesh = os.path.join(path_case,mesh)
 
-crs_coast = crs_from_shp(coast)
+if coast != "":
+    crs_coast = crs_from_shp(coast)
+else:
+    crs_coast = crs_from_shp(buffer)
 epsg = crs_coast.to_epsg()
 
 """

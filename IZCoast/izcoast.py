@@ -46,7 +46,7 @@ def init(mdt1, coast1, buffer1, polygonize_directorio1):
     directorio_dem = os.path.splitext(mdt)[0] # Sacar nombre que daremos a la nueva carpeta donde se guardarán los ficheros a partir del nombre del mdt
 
     cfcc = os.path.basename(mdt)[0:7].upper() # Nombre del directorio principal CFCC## donde están los ficheros base
-    opt = os.path.basename(mdt)[-5:-4].upper() # Letra de la resolucion (A/B)
+    opt = os.path.basename(mdt)[-6:-4].upper() # Letra de la resolucion (A/B)
 
 """
 Asigna el tamaño de las IZ según la resolución
@@ -59,7 +59,7 @@ def iz_size(asc_in):
     izmax_out = res*izmax/res_ref
     smalleriz_out = res*smalleriz/res_ref
 
-    return res, izmin_out, izmax_out, smalleriz_out
+    return res, int(izmin_out), int(izmax_out), int(smalleriz_out)
 
 """
 Genera la malla de celdas irregulares izid2.
